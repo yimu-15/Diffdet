@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "If you use DiffDet in your research, please cite it as below."
+title: "DiffDet: Foggy Object Detection through Lightweight Feature-Space Denoising"
+type: software
+authors:
+  - family-names: "Zhang"
+    given-names: "Yimu"
+    # Replace with the actual author list from the final manuscript.
+repository-code: "https://github.com/yimu-15/Diffdet"
+abstract: >-
+  DiffDet inserts a lightweight residual feature-denoising U-Net at the C5
+  position of Sparse R-CNN (ResNet-50 + FPN) to perform diffusion-inspired,
+  single-pass feature-space denoising for foggy object detection, with
+  teacher-student distillation and weight-only INT8 quantization.
+keywords:
+  - object detection
+  - foggy weather
+  - feature denoising
+  - knowledge distillation
+  - quantization
+license: Apache-2.0
+version: 0.1.0
+date-released: "2026-11-05"
+# status: "Submitted manuscript / Code release"

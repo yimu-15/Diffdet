@@ -1,0 +1,38 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Environment ---
+venv/
+.venv/
+env/
+*.conda/
+
+# --- IDE ---
+.idea/
+.vscode/
+*.swp
+
+# --- Data (never commit datasets) ---
+data/
+!data/.gitkeep
+
+# --- Weights / checkpoints (large, potentially licensed) ---
+checkpoints/
+*.pth
+*.pt
+!*.gitkeep
+work_dirs/
+!work_dirs/.gitkeep
+
+# --- Logs / temp ---
+*.log
+.DS_Store
+Thumbs.db
