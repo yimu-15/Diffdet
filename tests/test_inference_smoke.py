@@ -26,9 +26,10 @@ IMG = os.environ.get(
                  'JPEGImages', '000125.jpg'))
 
 pytestmark = pytest.mark.skipif(
-    not os.path.exists(CKPT),
-    reason='BLOCKED: trained checkpoint not found (weights are not '
-           'distributed in this repository); set DIFFDET_CKPT to enable')
+    not (os.path.exists(CKPT) and os.path.exists(IMG)),
+    reason='BLOCKED: trained checkpoint or sample image not found (weights '
+           'and data are not distributed in this repository); set '
+           'DIFFDET_CKPT and DIFFDET_IMAGE to enable')
 
 
 def _patch_torch_load():
