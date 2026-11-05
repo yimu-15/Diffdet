@@ -105,7 +105,7 @@ python -m pytest tests/ -q
 # 24 passed, 1 skipped（1 warning: pytest_asyncio 弃用提示）
 
 # 提供已训练 checkpoint 后（inference smoke 实跑）
-DIFFDET_CKPT=work_dirs/phase6/sparse_rcnn_voc_rainfog_final_int8.pth \
+DIFFDET_CKPT=checkpoints/sparse_rcnn_voc_rainfog_final_int8.pth \
 DIFFDET_IMAGE=data/VOC-FOG/moderate/VOC2007/JPEGImages/000125.jpg \
 python -m pytest tests/ -q
 # 25 passed
