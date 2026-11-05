@@ -76,7 +76,8 @@ detector's neck and head are completely untouched. See
 conda env create -f environment.yml
 conda activate diffdet
 
-# 2. (optional) install mmdetection via openmim
+# 2. install mmdetection (required: importing `diffdet` registers DiffDetDetector
+#    in the mmdet MODELS registry, so mmdet/mmcv/mmengine are hard dependencies)
 mim install mmdet
 ```
 
@@ -112,8 +113,11 @@ python tools/train_detector.py configs/baseline/sparse_rcnn_r50_fpn_300_proposal
     --work-dir work_dirs/sparse_rcnn_r50_fpn_300_proposals
 
 # Teacher U-Net (feature-space denoising, base=128)
-python tools/analyze_residuals.py --clean-dir <clean> --fog-dir <fog> \
-    --names <val.txt> --out-dir work_dirs/phase1/residuals \
+python tools/analyze_residuals.py \
+    --clean-dir data/VOCdevkit/VOC2007/JPEGImages \
+    --fog-dir data/VOC-FOG/moderate/VOC2007/JPEGImages \
+    --names data/VOCdevkit/VOC2007/ImageSets/Main/val.txt \
+    --out-dir work_dirs/phase1/residuals \
     --save-features work_dirs/phase1/clean_haze_features.pt
 python tools/train_teacher.py --features work_dirs/phase1/clean_haze_features.pt \
     --out work_dirs/phase1/unet_minimal_b128.pt --base 128
@@ -127,14 +131,71 @@ python tools/train_student.py --features work_dirs/phase1/clean_haze_features.pt
 python tools/train_detector.py \
     configs/diffdet/sparse_rcnn_r50_fpn_300_proposals_diffdet_finetune.py \
     --work-dir work_dirs/finetune_diffdet
+
+# Merge the deployment checkpoint (U-Net weights quantized to INT8, W8A32)
+python tools/merge_final_model.py \
+    --detector work_dirs/finetune_diffdet/epoch_3.pth \
+    --out checkpoints/sparse_rcnn_voc_rainfog_final_int8.pth
 ```
 
 ## Evaluation
 
 ```bash
+# DiffDet final checkpoint (INT8 U-Net embedded, no dynamic U-Net loading)
 python tools/evaluate.py \
     configs/diffdet/sparse_rcnn_r50_fpn_300_proposals_diffdet_final.py \
     --checkpoint checkpoints/sparse_rcnn_voc_rainfog_final_int8.pth
+
+# Same checkpoint on light / dense fog
+python tools/evaluate.py \
+    configs/diffdet/sparse_rcnn_r50_fpn_300_proposals_diffdet_final_light.py \
+    --checkpoint checkpoints/sparse_rcnn_voc_rainfog_final_int8.pth
+python tools/evaluate.py \
+    configs/diffdet/sparse_rcnn_r50_fpn_300_proposals_diffdet_final_dense.py \
+    --checkpoint checkpoints/sparse_rcnn_voc_rainfog_final_int8.pth
+
+# Sparse R-CNN baseline (use *_fog_light / *_fog_dense for the other levels)
+python tools/evaluate.py \
+    configs/baseline/sparse_rcnn_r50_fpn_300_proposals_fog_moderate.py \
+    --checkpoint work_dirs/sparse_rcnn_r50_fpn_300_proposals/epoch_7.pth
+```
+
+## Inference
+
+Single-image inference uses the standard MMDetection API. Importing `diffdet`
+registers `DiffDetDetector` and patches `torch.load` (`weights_only=False`, needed
+for PyTorch >= 2.6 with MMEngine checkpoints). The merged checkpoint does not
+store the VOC `dataset_meta`, so set it explicitly:
+
+```python
+import diffdet  # registers DiffDetDetector; patches torch.load
+from mmdet.apis import inference_detector, init_detector
+
+model = init_detector(
+    'configs/diffdet/sparse_rcnn_r50_fpn_300_proposals_diffdet_final.py',
+    'checkpoints/sparse_rcnn_voc_rainfog_final_int8.pth', device='cuda:0')
+model.dataset_meta = {
+    'classes': ('aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car',
+                'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
+                'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor'),
+    'palette': 'voc',
+}
+result = inference_detector(
+    model, 'data/VOC-FOG/moderate/VOC2007/JPEGImages/000125.jpg')
+print(result.pred_instances.bboxes.shape, result.pred_instances.scores.max())
+```
+
+The same code path is exercised by `tests/test_inference_smoke.py` (skipped
+unless `DIFFDET_CKPT` points to a trained checkpoint).
+
+## Efficiency benchmark
+
+```bash
+# FPS / peak GPU memory (single-image forward, U-Net included)
+python tools/benchmark.py \
+    configs/diffdet/sparse_rcnn_r50_fpn_300_proposals_diffdet_final.py \
+    --checkpoint checkpoints/sparse_rcnn_voc_rainfog_final_int8.pth \
+    --input-size 500 375 --warmup 5 --iters 50
 ```
 
 ## Reproduction results
@@ -148,6 +209,10 @@ Main results on **VOC-FOG** (val 2510, VOC07 11-point mAP):
 
 Clean upper bound: **0.8074**. Efficiency: baseline **17.7 FPS / 624 MB**,
 DiffDet **18.5 FPS / 627 MB** (RTX 4060 Laptop).
+
+![mAP vs fog density](assets/figures/figA_mAP_vs_fog.png)
+
+*Dense fog: baseline 0.5543 -> DiffDet 0.7169. The gain grows with fog density.*
 
 > These main-table numbers are **reproduced** from the logs in
 > `experiments/logs/`. See [`docs/EXPERIMENTS.md`](docs/EXPERIMENTS.md) and
@@ -172,6 +237,25 @@ be reproduced from the current logs):
 `tools/visualize_features.py` exports C5 feature response maps (clean / foggy /
 denoised) and `tools/analyze_residuals.py` produces the residual histogram and
 Gaussian Q-Q plot. See `assets/figures/` for generated figures.
+
+![Detection example](assets/examples/detection_example.png)
+
+*Example detection on a foggy image (more under `assets/examples/`).*
+
+```bash
+python tools/visualize_features.py \
+    --clean data/VOCdevkit/VOC2007/JPEGImages/000001.jpg \
+    --fog data/VOC-FOG/moderate/VOC2007/JPEGImages/000001.jpg \
+    --unet work_dirs/phase2/unet_student_c128_b32.pt \
+    --out-dir work_dirs/phase1/vis
+
+# residual statistics + histogram + Q-Q plot (paths as in the Training section)
+python tools/analyze_residuals.py \
+    --clean-dir data/VOCdevkit/VOC2007/JPEGImages \
+    --fog-dir data/VOC-FOG/moderate/VOC2007/JPEGImages \
+    --names data/VOCdevkit/VOC2007/ImageSets/Main/val.txt \
+    --out-dir work_dirs/phase1/residuals
+```
 
 ## Model weights
 

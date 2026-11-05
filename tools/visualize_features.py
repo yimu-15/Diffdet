@@ -4,7 +4,7 @@
 
     python tools/visualize_features.py \
         --clean data/VOCdevkit/VOC2007/JPEGImages/000001.jpg \
-        --fog data/VOC-FOG/JPEGImages/moderate/000001.jpg \
+        --fog data/VOC-FOG/moderate/VOC2007/JPEGImages/000001.jpg \
         --unet work_dirs/phase2/unet_student_c128_b32.pt \
         --out-dir work_dirs/phase1/vis
 """

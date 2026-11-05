@@ -10,3 +10,6 @@ numpy
 pillow
 scipy
 matplotlib
+
+# Tests
+pytest

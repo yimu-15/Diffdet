@@ -4,7 +4,7 @@
 
     python tools/analyze_residuals.py \
         --clean-dir data/VOCdevkit/VOC2007/JPEGImages \
-        --fog-dir data/VOC-FOG/JPEGImages/moderate \
+        --fog-dir data/VOC-FOG/moderate/VOC2007/JPEGImages \
         --names data/VOCdevkit/VOC2007/ImageSets/Main/val.txt \
         --out-dir work_dirs/phase1/residuals \
         --save-features work_dirs/phase1/clean_haze_features.pt

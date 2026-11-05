@@ -28,10 +28,14 @@ python tools/prepare_voc_fog.py \
 
 ```
 data/
-  VOCdevkit/VOC2007/JPEGImages & Annotations & ImageSets/Main/val.txt
-  VOC-FOG/{light,moderate,dense}/JPEGImages/{level}/...
-  VOC-FOG/ImageSets/Main/{level}_val.txt
+  VOCdevkit/VOC2007/JPEGImages & Annotations & ImageSets/Main/{val,trainval}.txt
+  VOC-FOG/{light,moderate,dense}/VOC2007/JPEGImages/{id}.jpg
+  VOC-FOG/{light,moderate,dense}/VOC2007/Annotations/{id}.xml
+  VOC-FOG/{light,moderate,dense}/VOC2007/ImageSets/Main/{val,trainval}.txt
 ```
+
+该布局与 `configs/baseline/*_fog_{light,moderate,dense}.py` 及
+`configs/diffdet/*_finetune.py` 中的 `data_root` / `sub_data_root` 完全一致。
 
 ## 3. 复现流水线
 
@@ -43,7 +47,7 @@ python tools/train_detector.py configs/baseline/sparse_rcnn_r50_fpn_300_proposal
 # 1. 特征残差分析 + 特征提取
 python tools/analyze_residuals.py \
     --clean-dir data/VOCdevkit/VOC2007/JPEGImages \
-    --fog-dir data/VOC-FOG/JPEGImages/moderate \
+    --fog-dir data/VOC-FOG/moderate/VOC2007/JPEGImages \
     --names data/VOCdevkit/VOC2007/ImageSets/Main/val.txt \
     --out-dir work_dirs/phase1/residuals \
     --save-features work_dirs/phase1/clean_haze_features.pt
@@ -64,8 +68,18 @@ python tools/train_detector.py \
     configs/diffdet/sparse_rcnn_r50_fpn_300_proposals_diffdet_finetune.py \
     --work-dir work_dirs/finetune_diffdet
 
+# 5. 合并最终 checkpoint（U-Net 权重 INT8 量化, W8A32 模拟）
+python tools/merge_final_model.py \
+    --detector work_dirs/finetune_diffdet/epoch_3.pth \
+    --out checkpoints/sparse_rcnn_voc_rainfog_final_int8.pth
+
 # 6. 评估（最终形态，INT8 U-Net）
 python tools/evaluate.py \
+    configs/diffdet/sparse_rcnn_r50_fpn_300_proposals_diffdet_final.py \
+    --checkpoint checkpoints/sparse_rcnn_voc_rainfog_final_int8.pth
+
+# 7. 效率基准（FPS / 峰值显存）
+python tools/benchmark.py \
     configs/diffdet/sparse_rcnn_r50_fpn_300_proposals_diffdet_final.py \
     --checkpoint checkpoints/sparse_rcnn_voc_rainfog_final_int8.pth
 ```

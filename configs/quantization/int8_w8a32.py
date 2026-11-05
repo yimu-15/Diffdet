@@ -1,5 +1,6 @@
 # weight-only INT8 量化配置（Phase 5）
-# 由 tools/benchmark.py / merge_final_model.py 使用。
+# 量化规格声明；实现见 diffdet/quantization/int8.py，最终 checkpoint 由
+# tools/merge_final_model.py 生成。
 
 quantization = dict(
     mode='weight-only',         # 仅权重量化（激活保持 fp32）
