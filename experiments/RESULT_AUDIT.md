@@ -44,6 +44,13 @@
 Clean upper bound = 0.8074（日志 `compare_table_literature.txt`：
 "Sparse R-CNN baseline VOC2007 val (clean) mAP 80.74"）。
 
+**独立复跑（2026-11-05，用本仓库 `tools/evaluate.py` + 现有 checkpoint）：**
+
+| 模型 | 独立复跑 mAP | 论文 | 结论 |
+|---|---:|---:|---|
+| DiffDet final INT8 | **0.7835**（AP50 0.7830，2510 张） | 0.7835 | REPRODUCED（完全一致） |
+| Baseline (epoch_7.pth) | **0.6935** | 0.6939 | REPRODUCED（Δ=0.0004，评估噪声） |
+
 ---
 
 ## 3. 消融实验（moderate fog）与 0.7835 vs 0.8342 核查 ★
@@ -110,11 +117,11 @@ Clean upper bound = 0.8074（日志 `compare_table_literature.txt`：
 
 ## 5. 蒸馏
 
-| 项 | 论文 | 日志 | 状态 |
+| 项 | 论文 | 实测（代码/checkpoint） | 状态 |
 |---|---|---:|---|
-| Teacher 参数 | ~4.58 M | 未在日志直接列出（`MinimalUNet(base=128)` 实测 ~4.6 M） | 待参数测试复算 |
-| Student 参数 | ~0.791 M | 0.791 M（`metrics_ablation_*.txt`） | REPRODUCED |
-| 比例 | 17.2% | 0.791 / 4.58 ≈ 17.3% | REPRODUCED（≈） |
+| Teacher 参数 | ~4.58 M | `MinimalUNet(base=128)` = **4,611,328（4.611 M）**；`work_dirs/phase1/unet_minimal_b128.pt` 全量张量 4,614,664 | 量级一致，**数值差 +0.7%**（统计口径/版本差异，PAPER-REPORTED） |
+| Student 参数 | ~0.791 M | **791,360（0.791 M）**（`StudentUNet(dim=128, base=32)`） | REPRODUCED（精确一致） |
+| 比例 | 17.2% | 791,360 / 4,611,328 = **17.16%** | REPRODUCED（≈） |
 | λ | 1.0 | `configs/distillation/distill_student_c128_b32.py` lam=1.0 | REPRODUCED |
 | 学生 epoch | 50 | `train_log_student_c128_b32.txt` 50 epoch | REPRODUCED |
 | 学生 val MSE | ~0.0455 | epoch50 val_mse=0.045574 | REPRODUCED |

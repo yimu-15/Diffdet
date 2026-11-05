@@ -80,3 +80,29 @@ python tools/evaluate.py \
 
 - 完整精度复现需要 VOC2007/VOC2012 数据与预训练权重，缺一不可。
 - 权重文件体积大，本仓库默认不入库（`.gitignore`），需按 MODEL_ZOO 自行获取/复现。
+
+## 6. 测试与实测记录（2026-11-05 实际执行）
+
+环境：Windows + `D:\conda_envs\fedsem`（torch 2.7.1 / mmdet 3.3.0 / mmcv 2.1.0 / mmengine 0.10.7）。
+
+```bash
+# 常规测试（无 checkpoint → inference smoke 自动 skip，不虚构 PASS）
+python -m pytest tests/ -q
+# 24 passed, 1 skipped（1 warning: pytest_asyncio 弃用提示）
+
+# 提供已训练 checkpoint 后（inference smoke 实跑）
+DIFFDET_CKPT=work_dirs/phase6/sparse_rcnn_voc_rainfog_final_int8.pth \
+DIFFDET_IMAGE=data/VOC-FOG/moderate/VOC2007/JPEGImages/000125.jpg \
+python -m pytest tests/ -q
+# 25 passed
+```
+
+| 实测项 | 命令 | 结果 |
+|---|---|---|
+| DiffDet moderate 主实验 | `tools/evaluate.py configs/diffdet/..._diffdet_final.py --checkpoint ...final_int8.pth` | **mAP 0.7835** / AP50 0.7830（2510 张） |
+| Baseline moderate | `tools/evaluate.py configs/baseline/..._fog_moderate.py --checkpoint .../epoch_7.pth` | **mAP 0.6935**（论文/日志 0.6939，Δ=0.0004） |
+| 参数量 | `MinimalUNet(base=128)` / `StudentUNet(dim=128, base=32)` | 4,611,328（4.611 M）/ 791,360（0.791 M），比例 17.16% |
+
+> Baseline 复算 0.6935 与日志 0.6939 的 0.04 点差异，来自不同次推理的
+> 浮点/NMS 非严格确定性，属评估噪声；DiffDet 复算与论文完全一致（0.7835）。
+> 消融表中 0.8369/0.8342/0.8342 仍无法复算，见 `experiments/RESULT_AUDIT.md`。
