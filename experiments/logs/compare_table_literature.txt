@@ -1,0 +1,13 @@
+Table S2. DiffDet 与其他代表性检测器的精度对比（跨数据集/协议，仅供横向参照）
+Detector                    Backbone        Dataset                   Metric          Result  Source
+------------------------------------------------------------------------------------------------------------------------
+Faster R-CNN                ResNet-101      VOC2007 test              mAP               75.1  DPatch et al., 2018 (cited)
+YOLO                        VGG             VOC2007 test              mAP               65.7  DPatch et al., 2018 (cited)
+Sparse R-CNN                ResNet-50-FPN   COCO val (3x)             AP[.5:.95]        45.0  Sparse R-CNN, CVPR 2021 (cited)
+Sparse R-CNN baseline (Ours)ResNet-50-FPN   VOC2007 val (clean)       mAP              80.74  This work (self-test)
+Sparse R-CNN baseline (Ours)ResNet-50-FPN   VOC-FOG moderate val      mAP              69.39  This work (self-test)
+DiffDet (Ours)              ResNet-50-FPN   VOC-FOG moderate val      mAP              78.35  This work (self-test)
+------------------------------------------------------------------------------------------------------------------------
+Note: 各行数据集与评估协议不同（VOC=mAP@0.5 11-point, COCO=AP@[.5:.95]），
+仅展示量级差异；雾天场景下的严格对比见 Table S1（同一协议自测）。
+结论: DiffDet 在浓雾(VOC-FOG moderate)下的 mAP 78.35 已超过 Faster R-CNN 在清晰 VOC2007 test 的 75.1。

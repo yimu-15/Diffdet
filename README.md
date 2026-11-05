@@ -1,0 +1,200 @@
+# DiffDet
+
+**DiffDet: Foggy Object Detection through Lightweight Feature-Space Denoising**
+
+Official code release for the DiffDet paper.
+
+> **Status:** Submitted manuscript / Code release. This repository is a
+> research code release and is **not** affiliated with a peer-reviewed
+> publication yet. No acceptance status, publication date, or DOI is implied.
+
+---
+
+## Overview
+
+Foggy weather degrades the high-level features of a detector, sharply reducing
+detection accuracy. DiffDet addresses this by injecting a **lightweight residual
+feature-denoising U-Net** at the **C5** position of a **Sparse R-CNN**
+(ResNet-50 + FPN) detector. The denoiser performs a **single-pass,
+diffusion-inspired** feature correction
+
+```
+x' = x + U(x)
+```
+
+where `U` is a small U-Net that predicts an additive correction to the foggy C5
+feature. The corrected feature is then fed into the FPN and the standard
+Sparse R-CNN head.
+
+**Main contributions**
+
+1. A plug-and-play **feature-denoising module** at C5 that requires **no change**
+   to the detector head and preserves all output shapes.
+2. A **feature-residual analysis** showing that fog induces strongly **non-Gaussian,
+   heavy-tailed** feature residuals (skewness ≈ −10.24, excess kurtosis ≈ 385),
+   motivating the learned (non-linear) correction.
+3. **Teacher–student distillation** that compresses the denoiser from ~4.58 M to
+   ~0.79 M parameters (**17.2%**) with λ = 1.0 and a validation MSE of ~0.0455.
+4. **Weight-only INT8 quantization** (W8A32 simulation) for deployment.
+
+> **Important terminology.** DiffDet is *diffusion-inspired* — it borrows the
+> "recover a clean signal from a corrupted one" idea, but it is **not** an
+> iterative DDPM. The code contains **no** diffusion timesteps, noise schedule,
+> or reverse sampling.
+
+## Method
+
+> The author's own as-submitted architecture diagram is provided at
+> `assets/architecture/arch_diffdet_ieee_as_submitted.png`; the dataflow is
+> also described below.
+
+```
+foggy image -> ResNet-50 -> C5 (2048) -> [ + U(C5) ] -> FPN -> Sparse R-CNN
+                                ^                         ^
+                                |       C2/C3/C4          |
+                                +--------(unchanged)------+
+```
+
+The denoiser is inserted between the ResNet-50 **C5** output and the **FPN**
+input. Only C5 is denoised; C2/C3/C4 are passed through unchanged, so the
+detector's neck and head are completely untouched. See
+[`docs/METHOD.md`](docs/METHOD.md) for the full description.
+
+| Component | Detail |
+|---|---|
+| Detector | Sparse R-CNN (ResNet-50 + FPN) |
+| Denoiser input | C5, 2048 channels |
+| Channel reduction | 1×1 conv, 2048 → 128 |
+| U-Net | 2-level, base 32 (student) / 128 (teacher) |
+| Channel restoration | 1×1 conv, 128 → 2048 |
+| Fusion | residual `x' = x + U(x)` |
+
+## Installation
+
+```bash
+# 1. create environment
+conda env create -f environment.yml
+conda activate diffdet
+
+# 2. (optional) install mmdetection via openmim
+mim install mmdet
+```
+
+```bash
+# 3. make the `diffdet` package importable (from this repo root)
+pip install -e .
+```
+
+Verified versions: Python 3.10, PyTorch 2.7.1, mmdet 3.3.0, mmcv 2.1.0,
+mmengine 0.10.7.
+
+## Dataset preparation
+
+DiffDet uses **VOC-FOG**, a synthetic-fog variant of PASCAL VOC. The VOC
+dataset itself is **not** distributed here; obtain it from the official source.
+
+```bash
+python tools/prepare_voc_fog.py \
+    --voc-root data/VOCdevkit/VOC2007 \
+    --out-root data/VOC-FOG \
+    --levels light moderate dense
+```
+
+Fog strengths: light β=1.0, moderate β=1.8, dense β=3.0. Evaluation uses the
+VOC2007 **val** split (2510 images, 20 classes, 500×375) with the **VOC07
+11-point mAP** metric. See [`docs/REPRODUCIBILITY.md`](docs/REPRODUCIBILITY.md).
+
+## Training
+
+```bash
+# Baseline Sparse R-CNN
+python tools/train_detector.py configs/baseline/sparse_rcnn_r50_fpn_300_proposals.py \
+    --work-dir work_dirs/sparse_rcnn_r50_fpn_300_proposals
+
+# Teacher U-Net (feature-space denoising, base=128)
+python tools/analyze_residuals.py --clean-dir <clean> --fog-dir <fog> \
+    --names <val.txt> --out-dir work_dirs/phase1/residuals \
+    --save-features work_dirs/phase1/clean_haze_features.pt
+python tools/train_teacher.py --features work_dirs/phase1/clean_haze_features.pt \
+    --out work_dirs/phase1/unet_minimal_b128.pt --base 128
+
+# Student distillation (λ=1.0, 50 epochs)
+python tools/train_student.py --features work_dirs/phase1/clean_haze_features.pt \
+    --teacher work_dirs/phase1/unet_minimal_b128.pt \
+    --out work_dirs/phase2/unet_student_c128_b32.pt
+
+# Joint fine-tuning (detector + U-Net)
+python tools/train_detector.py \
+    configs/diffdet/sparse_rcnn_r50_fpn_300_proposals_diffdet_finetune.py \
+    --work-dir work_dirs/finetune_diffdet
+```
+
+## Evaluation
+
+```bash
+python tools/evaluate.py \
+    configs/diffdet/sparse_rcnn_r50_fpn_300_proposals_diffdet_final.py \
+    --checkpoint checkpoints/sparse_rcnn_voc_rainfog_final_int8.pth
+```
+
+## Reproduction results
+
+Main results on **VOC-FOG** (val 2510, VOC07 11-point mAP):
+
+| Method | Light | Moderate | Dense | Avg |
+|---|---:|---:|---:|---:|
+| Sparse R-CNN Baseline | 0.7625 | 0.6939 | 0.5543 | 0.6702 |
+| DiffDet | 0.8001 | 0.7835 | 0.7169 | 0.7668 |
+
+Clean upper bound: **0.8074**. Efficiency: baseline **17.7 FPS / 624 MB**,
+DiffDet **18.5 FPS / 627 MB** (RTX 4060 Laptop).
+
+> These main-table numbers are **reproduced** from the logs in
+> `experiments/logs/`. See [`docs/EXPERIMENTS.md`](docs/EXPERIMENTS.md) and
+> [`experiments/RESULT_AUDIT.md`](experiments/RESULT_AUDIT.md).
+
+## Ablation studies
+
+Ablation on VOC-FOG moderate (see `experiments/RESULT_AUDIT.md` for the full
+audit — **note** that several ablation numbers are paper-reported and could not
+be reproduced from the current logs):
+
+| Config | mAP |
+|---|---:|
+| Baseline | 0.6939 |
+| + Frozen U-Net denoiser | 0.7079 (paper) |
+| + Joint fine-tuning | 0.8369 (paper) |
+| + Distilled student U-Net | 0.8342 (paper) |
+| + INT8 quantization | 0.8342 (paper) |
+
+## Visualization
+
+`tools/visualize_features.py` exports C5 feature response maps (clean / foggy /
+denoised) and `tools/analyze_residuals.py` produces the residual histogram and
+Gaussian Q-Q plot. See `assets/figures/` for generated figures.
+
+## Model weights
+
+Large or licensed checkpoints are **not** distributed in this repository. See
+[`docs/MODEL_ZOO.md`](docs/MODEL_ZOO.md) for the full weight inventory and how to
+obtain or reproduce them.
+
+## Citation
+
+```bibtex
+@misc{diffdet2026,
+  title   = {{DiffDet}: Foggy Object Detection through Lightweight Feature-Space Denoising},
+  author  = {Zhang, Yimu and others},
+  note    = {Submitted manuscript / Code release},
+  url     = {https://github.com/yimu-15/Diffdet}
+}
+```
+
+See [`CITATION.cff`](CITATION.cff) as well.
+
+## License and acknowledgments
+
+Code is released under the **Apache License 2.0** (see [`LICENSE`](LICENSE)),
+inherited from [MMDetection](https://github.com/open-mmlab/mmdetection). The
+detector is built on **Sparse R-CNN** (CVPR 2021) and **MMDetection**; we thank
+the OpenMMLab team and the Sparse R-CNN authors.

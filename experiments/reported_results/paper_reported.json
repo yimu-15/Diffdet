@@ -1,0 +1,34 @@
+{
+  "note": "Paper-reported numbers only. These are NOT reproduced from this repository's logs unless stated. See RESULT_AUDIT.md.",
+  "main_results_voc_fog": {
+    "dataset": "VOC-FOG val (2510 images, 20 classes, 500x375)",
+    "metric": "VOC07 11-point mAP",
+    "baseline": {"light": 0.7625, "moderate": 0.6939, "dense": 0.5543, "avg": 0.6702},
+    "diffdet": {"light": 0.8001, "moderate": 0.7835, "dense": 0.7169, "avg": 0.7668},
+    "clean_upper_bound": 0.8074
+  },
+  "efficiency": {
+    "baseline": {"fps": 17.7, "memory_mb": 624},
+    "diffdet": {"fps": 18.5, "memory_mb": 627}
+  },
+  "ablation_moderate": {
+    "baseline": 0.6939,
+    "frozen_unet_denoiser": 0.7079,
+    "joint_finetuning": 0.8369,
+    "distilled_student_unet": 0.8342,
+    "int8_quantization": 0.8342,
+    "status": "PAPER-REPORTED / NOT VERIFIED (see RESULT_AUDIT.md section 3)"
+  },
+  "distillation": {
+    "teacher_params": "~4.58M",
+    "student_params": "~0.791M",
+    "ratio": "17.2%",
+    "lambda": 1.0,
+    "student_epochs": 50,
+    "val_mse": 0.0455
+  },
+  "residual_stats": {
+    "skewness": -10.24,
+    "excess_kurtosis": 385.76
+  }
+}

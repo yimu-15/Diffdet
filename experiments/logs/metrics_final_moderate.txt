@@ -1,0 +1,5 @@
+=== Phase 6.2 最终模型 DiffDet (Ours) — moderate (VOC-FOG val 2510) ===
+ckpt: D:\MMDetection\work_dirs\phase6\sparse_rcnn_voc_rainfog_final_int8.pth
+mAP = 0.7835 (baseline 0.6939, delta +0.0896)
+峰值显存: allocated = 1.00 GB, reserved = 1.34 GB
+总耗时 191.1s, 粗粒度 13.1 img/s

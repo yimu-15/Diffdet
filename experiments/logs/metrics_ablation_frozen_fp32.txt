@@ -1,0 +1,9 @@
+=== Phase 5.8 DiffDet (Ours) 轻量化消融 (VOC-FOG moderate val 2510) ===
+detector ckpt: work_dirs\sparse_rcnn_r50_fpn_300_proposals\epoch_7.pth
+unet: work_dirs\phase2\unet_student_c128_b32.pt
+quant: none
+mAP = 0.6994
+U-Net 参数 0.791 M / 存储 3.165 MB (FP32)
+总参数 107.04 M
+峰值显存: allocated = 0.99 GB, reserved = 1.94 GB
+总耗时 175.5s, 粗粒度 14.3 img/s
