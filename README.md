@@ -91,19 +91,45 @@ mmengine 0.10.7.
 
 ## Dataset preparation
 
-DiffDet uses **VOC-FOG**, a synthetic-fog variant of PASCAL VOC. The VOC
-dataset itself is **not** distributed here; obtain it from the official source.
+DiffDet uses **VOC-FOG**, a synthetic-fog variant of PASCAL VOC.
+
+**Pre-built VOC-FOG is distributed with the `v0.1.0` release** (so the exact
+evaluation images survive even if the local working copy is deleted):
+
+| File | Content | Size |
+|---|---|---|
+| `voc_fog_light.tar.gz` | β=1.0, VOC2007 val (2,510 images) | 186.73 MB |
+| `voc_fog_moderate.tar.gz` | β=1.8, VOC2007 trainval (5,011 images) | 333.56 MB |
+| `voc_fog_dense.tar.gz` | β=3.0, VOC2007 val (2,510 images) | 142.78 MB |
+
+```bash
+mkdir -p data/VOC-FOG
+for lvl in light moderate dense; do
+  mkdir -p data/VOC-FOG/$lvl
+  tar -xzf voc_fog_$lvl.tar.gz -C data/VOC-FOG/$lvl
+done
+```
+
+The underlying **PASCAL VOC2007 / VOC2012** images are *not* redistributed
+(they are third-party data). Download them from the official source and/or the
+public mirror, then rebuild VOC-FOG from scratch if you prefer:
 
 ```bash
 python tools/prepare_voc_fog.py \
     --voc-root data/VOCdevkit/VOC2007 \
     --out-root data/VOC-FOG \
-    --levels light moderate dense
+    --levels light moderate dense --seed 42
 ```
 
 Fog strengths: light β=1.0, moderate β=1.8, dense β=3.0. Evaluation uses the
 VOC2007 **val** split (2510 images, 20 classes, 500×375) with the **VOC07
-11-point mAP** metric. See [`docs/REPRODUCIBILITY.md`](docs/REPRODUCIBILITY.md).
+11-point mAP** metric.
+
+> **Every dataset — official download URL, SHA256 checksums, directory layout,
+> synthetic-fog parameters, and the exact commands to rebuild each split — is
+> documented in [`docs/DATASETS.md`](docs/DATASETS.md).** Read it before the
+> local `data/` directory is removed. Also see
+> [`docs/REPRODUCIBILITY.md`](docs/REPRODUCIBILITY.md).
 
 ## Training
 
@@ -259,9 +285,21 @@ python tools/analyze_residuals.py \
 
 ## Model weights
 
-Large or licensed checkpoints are **not** distributed in this repository. See
-[`docs/MODEL_ZOO.md`](docs/MODEL_ZOO.md) for the full weight inventory and how to
-obtain or reproduce them.
+The deployment checkpoint and the three U-Net variants are attached to the
+**`v0.1.0` GitHub Release** (git itself cannot hold files >100 MB):
+
+| File | What it is | Size |
+|---|---|---:|
+| `sparse_rcnn_voc_rainfog_final_int8.pth` | Final detector + embedded INT8 U-Net | 409.52 MB |
+| `unet_teacher_b128.pt` | Teacher U-Net (base=128, 4.611 M) | 17.62 MB |
+| `unet_student_c128_b32.pt` | Distilled student (0.791 M) | 3.05 MB |
+| `unet_finetuned_c128_b32.pt` | Student after joint fine-tuning | 3.04 MB |
+
+Download page: <https://github.com/yimu-15/Diffdet/releases/tag/v0.1.0>
+
+Per-file SHA256 and loading code are in
+[`docs/MODEL_ZOO.md`](docs/MODEL_ZOO.md); public backbone / COCO-pretrained
+weights (ResNet-50, Sparse R-CNN) are also listed there with their upstream URLs.
 
 ## Citation
 
@@ -282,3 +320,10 @@ Code is released under the **Apache License 2.0** (see [`LICENSE`](LICENSE)),
 inherited from [MMDetection](https://github.com/open-mmlab/mmdetection). The
 detector is built on **Sparse R-CNN** (CVPR 2021) and **MMDetection**; we thank
 the OpenMMLab team and the Sparse R-CNN authors.
+
+## Contact
+
+Questions about the code, the VOC-FOG synthesis, or the released checkpoints:
+
+- **Email:** yihang200407@163.com
+- **Issues:** <https://github.com/yimu-15/Diffdet/issues>

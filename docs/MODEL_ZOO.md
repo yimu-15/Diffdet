@@ -1,29 +1,67 @@
 # 模型仓库（MODEL_ZOO）
 
-## 权重清单
+维护者联系邮箱：**yihang200407@163.com**
 
-| 文件 | 说明 | 大小量级 | 是否入库 |
+## 1. 已发布权重（Release `v0.1.0`，作者授权分发）
+
+下载页：<https://github.com/yimu-15/Diffdet/releases/tag/v0.1.0>
+
+| 文件 | 说明 | 体积 | SHA256 |
 |---|---|---|---|
-| `checkpoints/resnet50-0676ba61.pth` | ResNet-50 ImageNet 预训练（torchvision） | ~98 MB | 否（公开可下载） |
-| `checkpoints/sparse_rcnn_r50_fpn_300_proposals_crop_mstrain_480-800_3x_coco_20201223_024605-9fe92701.pth` | Sparse R-CNN COCO 预训练（官方） | ~424 MB | 否（公开可下载） |
-| `work_dirs/sparse_rcnn_r50_fpn_300_proposals/epoch_7.pth` | baseline（VOC-FOG trainval 训练） | ~424 MB | 否（未授权上传） |
-| `work_dirs/phase1/unet_minimal_b128.pt` | 教师 U-Net（base=128） | ~18 MB | 否 |
-| `work_dirs/phase2/unet_student_c128_b32.pt` | 学生 U-Net（dim=128/base=32） | ~3.2 MB | 否 |
-| `work_dirs/phase4/unet_finetuned_c128_b32.pt` | 联合微调后的学生 U-Net | ~3.2 MB | 否 |
-| `release/models/unet_finetuned_c128_b32.pt` | 同 phase4（归档） | ~3.2 MB | 否 |
-| `release/models/sparse_rcnn_voc_rainfog_final_int8.pth` | 最终合并模型（INT8 U-Net） | ~424 MB | 否 |
+| `sparse_rcnn_voc_rainfog_final_int8.pth` | **最终部署模型**：检测器 + 内嵌 INT8（W8A32）U-Net，整体加载 | 409.52 MB | `0dc7eb83810e6fae887f0a0c209b5561a53bd274eebef5160425e4edfcb0ed3c` |
+| `unet_teacher_b128.pt` | 教师 U-Net（base=128，4.611 M 参数） | 17.62 MB | `83b63a7b740400aaad01614063758a826079648c9b5f463ec7e2e3041bba8d30` |
+| `unet_student_c128_b32.pt` | 蒸馏学生 U-Net（dim=128/base=32，0.791 M 参数） | 3.05 MB | `29607e9f238f7275724102862a35dca9fdbf481120eaf77dfbe07b39863327e2` |
+| `unet_finetuned_c128_b32.pt` | 联合微调后的学生 U-Net（Phase 4 产物） | 3.04 MB | `b2270cfbc46d1acf1bd90c8da5737e917f5e21a379595e13a53fa437eec868a0` |
 
-## 获取方式
+直链：
 
-本仓库**不直接分发**体积大或未经授权的权重。复现者可按
-[REPRODUCIBILITY.md](REPRODUCIBILITY.md) 的流水线自行训练获得，或联系作者获取
-（仅在获得授权后）。
+```
+https://github.com/yimu-15/Diffdet/releases/download/v0.1.0/sparse_rcnn_voc_rainfog_final_int8.pth
+https://github.com/yimu-15/Diffdet/releases/download/v0.1.0/unet_teacher_b128.pt
+https://github.com/yimu-15/Diffdet/releases/download/v0.1.0/unet_student_c128_b32.pt
+https://github.com/yimu-15/Diffdet/releases/download/v0.1.0/unet_finetuned_c128_b32.pt
+```
 
-> 说明：U-Net（教师/学生）体积小（<20 MB），如作者后续获得授权可在 Release 中分发；
-> 检测器 checkpoint（含 ResNet-50 权重）体积大，且依赖预训练权重许可，默认不随库发布。
+校验：
 
-## 自测 checkpoint 加载
+```bash
+sha256sum sparse_rcnn_voc_rainfog_final_int8.pth unet_*.pt
+```
 
-最终合并模型（`sparse_rcnn_voc_rainfog_final_int8.pth`）为 Phase 6.1 产物：
-整体 checkpoint 内 `state_dict` 同时含检测器与 `unet.*` 权重，评估时
-`DiffDetDetector` 不传 `unet_path`，由 `unet.*` keys 填充 U-Net。
+> `sparse_rcnn_voc_rainfog_final_int8.pth` 的 `state_dict` 同时含检测器与
+> `unet.*` 权重，加载时 `DiffDetDetector` **无需** `unet_path`。
+> 单独下载的 U-Net 权重用于复现蒸馏、SVD 与轻量化消融实验。
+
+## 2. 公开可下载权重（不在本仓库分发）
+
+| 文件 | 来源 | 体积 |
+|---|---|---|
+| `resnet50-0676ba61.pth` | <https://download.pytorch.org/models/resnet50-0676ba61.pth> | ~98 MB |
+| `sparse_rcnn_r50_fpn_300_proposals_crop_mstrain_480-800_3x_coco_20201223_024605-9fe92701.pth` | MMDetection model zoo（见 [DATASETS.md §6](DATASETS.md)） | ~424 MB |
+
+## 3. 未发布的训练检查点
+
+以下检查点体积大（含优化器状态），且可由公开数据与代码完整重训，
+**不随 Release 分发**：
+
+| 文件 | 说明 | 体积 | 获取方式 |
+|---|---|---|---|
+| `work_dirs/sparse_rcnn_r50_fpn_300_proposals/epoch_7.pth` | baseline（VOC2007+VOC2012 trainval，12 epoch 取第 7） | 1.28 GB | 按 [REPRODUCIBILITY.md](REPRODUCIBILITY.md) 训练，或邮件联系作者 |
+| `work_dirs/phase4/finetune_diffdet/epoch_3.pth` | 联合微调最终 epoch | 1.11 GB | 同上 |
+| `work_dirs/sparse_rcnn_r50_fpn_300_proposals/epoch_{1..6}.pth` | 中间 epoch | 各 1.2~1.3 GB | 同上 |
+
+> 如需从检查点续训或复算 baseline 日志，请邮件联系 **yihang200407@163.com**。
+
+## 4. 加载方式
+
+最终合并模型（Phase 6.1 产物）：
+
+```python
+from mmengine.runner import load_checkpoint
+from diffdet import DiffDetDetector  # 注册到 MODELS
+
+model = DiffDetDetector(...)           # 不传 unet_path
+load_checkpoint(model, 'sparse_rcnn_voc_rainfog_final_int8.pth', map_location='cpu')
+```
+
+完整推理示例见 [REPRODUCIBILITY.md](REPRODUCIBILITY.md) §6 与 `tools/evaluate.py`。

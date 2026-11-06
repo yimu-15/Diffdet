@@ -14,14 +14,18 @@ pip install -r requirements.txt
 
 ## 2. 数据准备
 
-VOC2007/VOC2012 需自行按 PASCAL VOC 官方方式获取（本仓库**不提供**数据）。
+VOC2007/VOC2012 需自行按 PASCAL VOC 官方方式获取（本仓库**不提供**第三方数据集本体）。
+
+**VOC-FOG 已随 `v0.1.0` Release 分发**，可直接下载解压，无需重新合成；
+完整的数据集来源 URL、SHA256、目录结构与重建命令见
+[`DATASETS.md`](DATASETS.md)（清理本地 `data/` 后请以该文档为准）。
 
 ```bash
 # 生成 VOC-FOG 合成雾（β=1.0/1.8/3.0）
 python tools/prepare_voc_fog.py \
     --voc-root data/VOCdevkit/VOC2007 \
     --out-root data/VOC-FOG \
-    --levels light moderate dense
+    --levels light moderate dense --seed 42
 ```
 
 预期目录：
@@ -93,7 +97,8 @@ python tools/benchmark.py \
 ## 5. 已知限制
 
 - 完整精度复现需要 VOC2007/VOC2012 数据与预训练权重，缺一不可。
-- 权重文件体积大，本仓库默认不入库（`.gitignore`），需按 MODEL_ZOO 自行获取/复现。
+- 权重文件体积大，默认不入 git 历史；最终模型与 U-Net 三版已作为
+  `v0.1.0` Release assets 分发，见 [`MODEL_ZOO.md`](MODEL_ZOO.md)。
 
 ## 6. 测试与实测记录（2026-11-05 实际执行）
 

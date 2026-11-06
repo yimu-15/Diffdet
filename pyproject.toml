@@ -9,7 +9,7 @@ description = "DiffDet: Foggy Object Detection through Lightweight Feature-Space
 readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "Apache-2.0" }
-authors = [{ name = "Zhang Yimu" }]
+authors = [{ name = "Zhang Yimu", email = "yihang200407@163.com" }]
 dependencies = [
     "torch>=2.0",
     "torchvision>=0.15",
@@ -18,6 +18,12 @@ dependencies = [
     "scipy",
     "matplotlib",
 ]
+
+[project.urls]
+Homepage = "https://github.com/yimu-15/Diffdet"
+Repository = "https://github.com/yimu-15/Diffdet"
+Releases = "https://github.com/yimu-15/Diffdet/releases"
+"Bug Tracker" = "https://github.com/yimu-15/Diffdet/issues"
 
 [project.optional-dependencies]
 mmdet = ["mmdet>=3.0", "mmcv>=2.0", "mmengine>=0.8"]
