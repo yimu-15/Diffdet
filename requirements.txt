@@ -1,0 +1,15 @@
+# Core (install MMDetection ecosystem first, see environment.yml)
+torch>=2.0
+torchvision>=0.15
+mmcv>=2.0
+mmdet>=3.0
+mmengine>=0.8
+
+# DiffDet dependencies
+numpy
+pillow
+scipy
+matplotlib
+
+# Tests
+pytest

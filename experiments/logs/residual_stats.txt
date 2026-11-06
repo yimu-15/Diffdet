@@ -1,0 +1,9 @@
+n_pairs = 500
+n_elements = 509249536
+residual mean = -0.01381
+residual std = 0.2382
+skewness = -10.24
+kurtosis (excess) = 385.8
+mean ||Δ||/||f_clean|| = 0.5618
+mean MSE(clean, haze) = 0.05721
+mean cosine(clean, haze) = 0.8201

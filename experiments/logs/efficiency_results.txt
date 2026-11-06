@@ -1,0 +1,14 @@
+Method                mAP Params(M)   FLOPs(G)  Pixel(ms)  GPU(ms) Total(ms) PeakMem(GB)
+----------------------------------------------------------------------------------------
+Baseline           0.6939    106.25     105.23       0.00    58.05     58.05        0.59
+DCP + Detector     0.7481    106.25     105.23      27.02    55.27     82.29        0.59
+CLAHE + Detector   0.6986    106.25     105.23       1.16    55.33     56.50        0.59
+DiffDet (Ours)     0.7835    107.04     105.61       0.00    56.87     56.87        0.59
+
+说明:
+- mAP 为 VOC-FOG moderate val (2510张) 历史实测值。
+- Params/FLOPs 由 get_model_complexity_info 统计(GPU 模型部分; Ours 含 U-Net 0.79M)。
+- Pixel(ms) 为 DCP/CLAHE 单张 CPU 耗时; GPU(ms) 为 batch=1 推理+后处理 (warmup 20 + 平均 100 次, cuda.synchronize 计时)。
+- Total(ms) = Pixel + GPU。GPU 时间不含 CPU 端 resize/pad/normalize (各方法一致)。
+- PeakMem(GB) 为 torch.cuda.max_memory_allocated 峰值 (GPU 推理 20 次取最大)。
+- 像素级方法为 OpenCV/NumPy CPU 实现, FLOPs 无法用 torch 分析器统计; 其估算 FLOPs(数量级) 见 json 的 flops_pixel_est_g, 相对检测器 ~98G 可忽略, 真实代价体现在 Pixel 延迟列。

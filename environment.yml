@@ -1,0 +1,21 @@
+name: diffdet
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - numpy
+  - pillow
+  - scipy
+  - matplotlib
+  - pip:
+      - torch>=2.0
+      - torchvision>=0.15
+      - openmim
+      - mmcv>=2.0
+      - mmdet>=3.0
+      - mmengine>=0.8
+      - pytest

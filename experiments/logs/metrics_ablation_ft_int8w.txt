@@ -1,0 +1,9 @@
+=== Phase 5.8 DiffDet (Ours) 轻量化消融 (VOC-FOG moderate val 2510) ===
+detector ckpt: work_dirs\phase4\finetune_diffdet\epoch_3.pth
+unet: work_dirs\phase4\unet_finetuned_c128_b32.pt
+quant: int8w
+mAP = 0.7835
+U-Net 参数 0.791 M / 存储 0.799 MB (INT8 权重 0.787 + scales 0.011)
+总参数 107.04 M
+峰值显存: allocated = 0.99 GB, reserved = 1.84 GB
+总耗时 174.8s, 粗粒度 14.4 img/s

@@ -1,0 +1,6 @@
+Table S1. VOC-FOG 全方法对比（自测，同一评估协议: VOC07 11-point mAP, val 2510 imgs）
+Method                                         Light    Moderate     Dense       Avg
+Baseline (Sparse R-CNN, no dehazing)          0.7625    0.6939    0.5543    0.6702
+DCP (He et al. 2011, pixel-level)             0.7841    0.7481    0.6730    0.7351
+CLAHE (pixel-level)                           0.7590    0.6986    0.5831    0.6802
+DiffDet (Ours, feature-level)                 0.8001    0.7835    0.7169    0.7668

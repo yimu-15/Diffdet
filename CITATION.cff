@@ -5,8 +5,10 @@ type: software
 authors:
   - family-names: "Zhang"
     given-names: "Yimu"
+    email: "yihang200407@163.com"
     # Replace with the actual author list from the final manuscript.
 repository-code: "https://github.com/yimu-15/Diffdet"
+url: "https://github.com/yimu-15/Diffdet"
 abstract: >-
   DiffDet inserts a lightweight residual feature-denoising U-Net at the C5
   position of Sparse R-CNN (ResNet-50 + FPN) to perform diffusion-inspired,

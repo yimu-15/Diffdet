@@ -1,0 +1,29 @@
+Phase 6.4 速度/显存压力测试结果（RTX 4060 Laptop）
+======================================================
+模型：sparse_rcnn_voc_rainfog_final_int8.pth（DiffDet (Ours): Sparse R-CNN + INT8 U-Net 整体 checkpoint）
+工具：mmdetection/tools/analysis_tools/benchmark.py --task inference --repeat-num 3 --max-iter 200 --num-warmup 5
+时间：2026-08-18 13:40-13:41
+
+FPS（3 次平均）
+  Overall fps: [18.0, 18.7, 18.8][18.5] img/s
+  单张耗时: [55.5, 53.5, 53.3][54.1] ms/img
+  对比 Phase 0.6 基线（无 U-Net）：17.7 img/s（56.6 ms/img）
+  → 速度无退化（+0.8 img/s，属噪声范围），U-Net 附加计算可忽略
+
+显存峰值
+  推理窗口内峰值：607~627 MB（~0.61 GB）
+  模型常驻显存（无推理）：419 MB
+  对比 Phase 0.6 基线：峰值 624 MB / 常驻 416 MB
+  → U-Net 附加显存 ≈ +3 MB（<0.5%），零额外开销
+
+模型总大小
+  最终 checkpoint（单文件整体）：409.518 MB
+    其中 Sparse R-CNN 检测器 FP32 权重 ≈ 408.7 MB（106.25M 参数）
+    其中 U-Net（INT8 W8A32）：0.799 MB（-74.8% vs FP32 3.165 MB）
+    U-Net 占整体体积比例：0.2%
+  对比：基线训练 checkpoint epoch_7.pth 1282 MB（含优化器状态，不可直接对比）
+
+话术要点
+  - 速度瓶颈在 Backbone/检测头（17.7→18.5 img/s，无退化）
+  - 显存峰值 627 vs 624 MB（+3 MB）→ "零额外显存成本"
+  - U-Net 存储 0.799 MB / 整体 0.2% → "极低的存储开销"

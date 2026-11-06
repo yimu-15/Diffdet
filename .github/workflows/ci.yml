@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'release/**']
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-cpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install system libraries for OpenCV
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgl1 libglib2.0-0
+
+      - name: Install dependencies (pinned CPU wheels, no source builds)
+        run: |
+          python -m pip install --upgrade pip "setuptools>=77" wheel
+          # numpy 1.x: OpenMMLab CPU wheels are compiled against the numpy 1.x ABI
+          python -m pip install "numpy==1.26.4" "opencv-python==4.10.0.84"
+          # CPU-only PyTorch matching the official mmcv CPU wheel index (torch2.1.0)
+          python -m pip install "torch==2.1.0" "torchvision==0.16.0" \
+            --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install "mmengine==0.10.7"
+          # prebuilt mmcv CPU wheel: avoids compiling mmcv from the sdist
+          python -m pip install "mmcv==2.1.0" --only-binary mmcv \
+            -f https://download.openmmlab.com/mmcv/dist/cpu/torch2.1.0/index.html
+          python -m pip install "mmdet==3.3.0"
+          python -m pip install "pillow" "scipy" "matplotlib" "pytest"
+          python -m pip install -e . --no-deps
+
+      - name: Verify installed versions
+        run: |
+          python -c "import torch, torchvision, mmcv, mmdet, mmengine, numpy, cv2; \
+          print('torch', torch.__version__, '| torchvision', torchvision.__version__, \
+          '| mmcv', mmcv.__version__, '| mmdet', mmdet.__version__, \
+          '| mmengine', mmengine.__version__, '| numpy', numpy.__version__, \
+          '| opencv', cv2.__version__)"
+
+      - name: Run tests
+        run: |
+          python -m pytest tests/ -q

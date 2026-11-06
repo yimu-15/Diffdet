@@ -1,0 +1,46 @@
+{
+  "baseline": {
+    "flops_g": 105.22703104,
+    "params_m": 106.250368,
+    "gpu_ms": 58.04750199999944,
+    "pixel_ms": 0.0,
+    "total_ms": 58.04750199999944,
+    "mem_alloc_gb": 0.5907821655273438,
+    "mem_reserved_gb": 0.705078125,
+    "flops_pixel_est_g": 0.0,
+    "mAP_moderate": 0.6939
+  },
+  "dcp": {
+    "flops_g": 105.22703104,
+    "params_m": 106.250368,
+    "gpu_ms": 55.270768999998836,
+    "pixel_ms": 27.016954999999143,
+    "total_ms": 82.28772399999798,
+    "mem_alloc_gb": 0.5893826484680176,
+    "mem_reserved_gb": 0.69140625,
+    "flops_pixel_est_g": 0.0804195,
+    "mAP_moderate": 0.7481
+  },
+  "clahe": {
+    "flops_g": 105.22703104,
+    "params_m": 106.250368,
+    "gpu_ms": 55.33470899999884,
+    "pixel_ms": 1.1605849999796192,
+    "total_ms": 56.49529399997846,
+    "mem_alloc_gb": 0.5893826484680176,
+    "mem_reserved_gb": 0.69140625,
+    "flops_pixel_est_g": 0.01332,
+    "mAP_moderate": 0.6986
+  },
+  "ours": {
+    "flops_g": 105.6114304,
+    "params_m": 107.041728,
+    "gpu_ms": 56.871538000004875,
+    "pixel_ms": 0.0,
+    "total_ms": 56.871538000004875,
+    "mem_alloc_gb": 0.5930213928222656,
+    "mem_reserved_gb": 0.693359375,
+    "flops_pixel_est_g": 0.0,
+    "mAP_moderate": 0.7835
+  }
+}
